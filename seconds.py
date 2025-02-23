@@ -4,6 +4,8 @@ from kivy.properties import BooleanProperty
 
 # Клас для створення віджета-секундоміра
 class Seconds(Label):
+    done = BooleanProperty(False)
+    
     def __init__(self, total, **kwargs):
         self.done = False
         self.current = 0
