@@ -78,7 +78,9 @@ class PulseScr(Screen):
         self.input_result.set_disabled(True)        # блокуємо поле для введення результату
         self.button = Button(text = "Продовжити", size_hint = (0.3, 0.2), pos_hint = {"center_x": 0.5})
         self.button.on_press = self.next
+
         self.lbl_seconds = Seconds(15)  # створюємо віджет-секундомір
+        self.lbl_seconds.bind(done = self.seconds_finish)  # при завершенні роботи секундоміра запускаємо метод seconds_finish 
         self.next_screen = False        # властивість, яка "пропускатиме" нас на наступний екран
 
         self.result_layout = BoxLayout(size_hint = (0.8, 0.1))
@@ -93,12 +95,18 @@ class PulseScr(Screen):
 
         self.add_widget(self.main_layout)
 
+    # Метод, який спрацьовує коли секундомір завершує роботу 
+    def seconds_finish(self, *args):
+        self.button.set_disabled(False)
+        self.input_result.set_disabled(False)
+        self.next_screen = True
+
     # метод, що спрацьовує при натисканні на кнопку "Продовжити"
     def next(self):
         # якщо нам ще не можна на наступний екран 
         if not self.next_screen:
             self.button.set_disabled(True) 
-            self.lbl_seconds.start()
+            self.lbl_seconds.restart(15)
         # якщо нам вже можна на наступний екран 
         else:
             global p1
@@ -107,6 +115,8 @@ class PulseScr(Screen):
                 self.input_result.text = "Введіть ціле число"
             elif p1 <= 0 or p1 >= 50:
                 self.input_result.text = "Виміряйте пульс ще раз"
+                self.next_screen = False
+                self.input_result.set_disabled(True)
             else:
                 self.manager.current = "sits"
     
@@ -143,6 +153,13 @@ class PulseScr2(Screen):
         self.button = Button(text = 'Завершити', size_hint = (0.3, 0.2), pos_hint = {'center_x': 0.5})
         self.button.on_press = self.next
 
+        self.lbl_seconds = Seconds(15)  # створюємо віджет-секундомір 
+        self.lbl_seconds.bind(done = self.seconds_finish)  # при завершенні роботи секундоміра запускаємо метод seconds_finish 
+        self.next_screen = False        # властивість, яка "пропускатиме" нас на наступний екран 
+        self.stage = 1                          # властивість, яка визначає на якому етапі роботи секундоміра знаходиться користувач
+        self.enter_result1.set_disabled(True)   # блокуємо поле для введення першого результату  
+        self.enter_result2.set_disabled(True)   # блокуємо поле для введення другого результату  
+
         line1 = BoxLayout(size_hint = (0.8, 0.1))
         line1.add_widget(lbl_result1)
         line1.add_widget(self.enter_result1)
@@ -153,27 +170,48 @@ class PulseScr2(Screen):
 
         main_line = BoxLayout(orientation = 'vertical', padding = 8, spacing = 8)
         main_line.add_widget(instructions)
+        main_line.add_widget(self.lbl_seconds)  
         main_line.add_widget(line1)
         main_line.add_widget(line2)
         main_line.add_widget(self.button)
         self.add_widget(main_line)
-    
+
+    # Метод, який спрацьовує коли секундомір завершує роботу
+    def seconds_finish(self, *args):
+        if self.lbl_seconds.done:
+            if self.stage == 1:
+                self.enter_result1.set_disabled(False)
+                self.lbl_seconds.restart(30)
+                self.stage = 2
+            elif self.stage == 2:
+                self.lbl_seconds.restart(15)
+                self.stage = 3
+            elif self.stage == 3:
+                self.enter_result2.set_disabled(False)
+                self.button.set_disabled(False)
+                self.next_screen = True
+
+
     # метод, що спрацьовує при натисканні на кнопку "Завершити"
     def next(self):
-        global p2, p3
-        p2 = check_int(self.enter_result1.text)
-        p3 = check_int(self.enter_result2.text)
-
-        if p2 == False:
-            self.enter_result1.text = "Введіть ціле число"
-        elif p2 <= 0 or p2 >= 50:
-            self.enter_result1.text = "Виміряйте пульс ще раз"
-        elif p3 == False:
-             self.enter_result2.text = "Введіть ціле число"
-        elif p3 <= 0 or p3 >= 50:
-            self.enter_result2.text = "Виміряйте пульс ще раз"
+        if not self.next_screen:
+            self.button.set_disabled(True)
+            self.lbl_seconds.start()
         else:
-            self.manager.current = 'result'
+            global p2, p3
+            p2 = check_int(self.enter_result1.text)
+            p3 = check_int(self.enter_result2.text)
+
+            if p2 == False:
+                self.enter_result1.text = "Введіть ціле число"
+            elif p2 <= 0 or p2 >= 50:
+                self.enter_result1.text = "Виміряйте пульс ще раз"
+            elif p3 == False:
+                self.enter_result2.text = "Введіть ціле число"
+            elif p3 <= 0 or p3 >= 50:
+                self.enter_result2.text = "Виміряйте пульс ще раз"
+            else:
+                self.manager.current = 'result'
         
 
 
