@@ -9,6 +9,9 @@ from kivy.uix.scrollview import ScrollView
 from instructions import txt_instruction, txt_test1, txt_test2, txt_test3, txt_sits  
 from ruffier import test         
 from seconds import Seconds                                                    
+from sits import Sits
+from runner import Runner 
+
 
 p1 = 0
 p2 = 0 
@@ -126,18 +129,40 @@ class PulseScr(Screen):
 class CheckSits(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        instructions = Label(text = txt_test2)
+        instructions = Label(text = txt_sits)
         self.button = Button(text = 'Продовжити', size_hint = (0.3, 0.2), pos_hint = {'center_x': 0.5})
         self.button.on_press = self.next
+        
+        self.sits = Sits(30)                                    # віджет для підрахунку присідань
+        self.runner = Runner(30, 1.5, size_hint = (0.4, 1))     # віджет з бігунком
+        #якщо властивість бігунка "finished" поміняє значення, то запускаємо метод runner_stop()
+        self.runner.bind(finished = self.runner_stop)
+        self.next_screen = False
+
+        horizontal_layout = BoxLayout()
+        horizontal_layout.add_widget(instructions)
+        horizontal_layout.add_widget(self.sits)
+        horizontal_layout.add_widget(self.runner)
 
         main_line = BoxLayout(orientation = 'vertical', padding = 8, spacing = 8)
-        main_line.add_widget(instructions)
+        main_line.add_widget(horizontal_layout)
         main_line.add_widget(self.button)
         self.add_widget(main_line)
 
+    # метод, який спрацьовує, коли бігунок завершив свою роботу
+    def runner_stop(self, *args):
+        self.button.set_disabled(False)
+        self.next_screen = True
+
     # метод, що спрацьовує при натисканні на кнопку "Продовжити"
     def next(self):
-        self.manager.current = 'pulse2'
+        if not self.next_screen:
+            self.button.set_disabled(True)
+            self.runner.start()
+            self.runner.bind(value = self.sits.next)
+
+        else:
+            self.manager.current = 'pulse2'
     
   
 
