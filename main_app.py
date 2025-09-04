@@ -6,269 +6,285 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
 from kivy.uix.scrollview import ScrollView
-from instructions import txt_instruction, txt_test1, txt_test2, txt_test3, txt_sits  
-from ruffier import test         
-from seconds import Seconds                                                    
+ 
+from instructions import txt_instruction, txt_test1, txt_test2, txt_test3, txt_sits
+from ruffier import test
+
+from seconds import Seconds
 from sits import Sits
-from runner import Runner 
+from runner import Runner
 
+Window.clearcolor = (0.51, 0.667, 1, 1)
+btn_color = (0.804, 0.918, 0.988, 1)
 
-p1 = 0
-p2 = 0 
-p3 = 0
 age = 7
 name = ""
+p1, p2, p3 = 0, 0, 0
 
-# Функція, яка повертає число або False, якщо рядок не конвертується
+# повертає число або False, якщо рядок не конвертується
 def check_int(str_num):
     try:
         return int(str_num)
     except:
         return False
 
-# Клас для створення першого екрану (з інструкцією)
+
+#Клас для першого вікна (вікна з інтсрукціями до програми)
 class InstrScr(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.instructions = Label(text = txt_instruction)
-        self.lbl_name = Label(text = "Введіть ім'я")
-        self.lbl_age = Label(text = "Введіть вік")
-        self.input_name = TextInput(multiline = False)
-        self.input_age = TextInput(multiline = False)
-        self.button = Button(text = "Почати", size_hint = (0.3, 0.2), pos_hint = {"center_x": 0.5})
-        self.button.on_press = self.next
-
-        self.name_layout = BoxLayout(size_hint = (0.8, 0.15))
-        self.name_layout.add_widget(self.lbl_name)
-        self.name_layout.add_widget(self.input_name)
-
-        self.age_layout = BoxLayout(size_hint = (0.8, 0.15))
-        self.age_layout.add_widget(self.lbl_age)
-        self.age_layout.add_widget(self.input_age)
-
-        self.main_layout = BoxLayout(orientation = "vertical", spacing = 8, padding = 8)
-        self.main_layout.add_widget(self.instructions)
-        self.main_layout.add_widget(self.name_layout)
-        self.main_layout.add_widget(self.age_layout)
-        self.main_layout.add_widget(self.button)
-
-        self.add_widget(self.main_layout)
-
-    # метод, що спрацьовує при натисканні на кнопку "Почати"
+ 
+        instr = Label(text=txt_instruction)
+ 
+        lbl1 = Label(text="Введіть ім'я:", halign='right')
+        self.in_name = TextInput(multiline=False)
+        lbl2 = Label(text='Введіть вік:', halign='right')
+ 
+        self.in_age = TextInput(text='7', multiline=False)
+        self.btn = Button(text='Почати', size_hint=(0.3, 0.2), pos_hint={'center_x': 0.5})
+        self.btn.background_color = btn_color
+        self.btn.on_press = self.next
+ 
+        line1 = BoxLayout(size_hint=(0.8, None), height='30sp')
+        line2 = BoxLayout(size_hint=(0.8, None), height='30sp')
+        line1.add_widget(lbl1)
+        line1.add_widget(self.in_name)
+        line2.add_widget(lbl2)
+        line2.add_widget(self.in_age)
+ 
+        outer = BoxLayout(orientation='vertical', padding=8, spacing=8)
+        outer.add_widget(instr)
+        outer.add_widget(line1)
+        outer.add_widget(line2)
+        outer.add_widget(self.btn)
+ 
+        self.add_widget(outer)
+    
+    #метод, який спрацьовуватиме при натисканні на кнопку "Продовжити" на першому екрані
     def next(self):
-        global name, age
-        name = self.input_name.text
-        age = check_int(self.input_age.text)
-
-        if age == False:
-            self.input_age.text = "Введіть ціле число"
-        elif age < 7:
-            self.input_age.text = "Введіть число більше 7"
-        elif not name.strip():
-            self.input_name.text = "Введіть ваше ім'я"
+        name = self.in_name.text
+        age = check_int(self.in_age.text)
+        if age == False or age < 7:
+            age = 7
+            self.in_age.text = str(age)
         else:
-            self.manager.current = "pulse"
+            self.manager.current = 'pulse1'
+ 
 
-
-
-# Клас для створення другого екрану (з першим вимірюванням пульсу)         
+#Клас для другого вікна (тут треба вписати результат першого вимірювання пульсу)
 class PulseScr(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.instructions = Label(text = txt_test1)
-        self.lbl_result = Label(text = "Введіть результат")
-        self.input_result = TextInput(multiline = False)
-        self.input_result.set_disabled(True)        # блокуємо поле для введення результату
-        self.button = Button(text = "Продовжити", size_hint = (0.3, 0.2), pos_hint = {"center_x": 0.5})
-        self.button.on_press = self.next
+        self.next_screen = False
+      
+        instr = Label(text=txt_test1)
+        self.lbl_sec = Seconds(15)
+        self.lbl_sec.bind(done=self.sec_finished)
 
-        self.lbl_seconds = Seconds(15)  # створюємо віджет-секундомір
-        self.lbl_seconds.bind(done = self.seconds_finish)  # при завершенні роботи секундоміра запускаємо метод seconds_finish 
-        self.next_screen = False        # властивість, яка "пропускатиме" нас на наступний екран
+        line = BoxLayout(size_hint=(0.8, None), height='30sp')
+        lbl_result = Label(text='Введіть результат:', halign='right')
+        self.in_result = TextInput(text='0', multiline=False)
+        self.in_result.set_disabled(True)
+      
+        line.add_widget(lbl_result)
+        line.add_widget(self.in_result)
+ 
+        self.btn = Button(text='Почати', size_hint=(0.3, 0.4), pos_hint={'center_x': 0.5})
+        self.btn.background_color = btn_color
+        self.btn.on_press = self.next
+ 
+        outer = BoxLayout(orientation='vertical', padding=8, spacing=8)
+        outer.add_widget(instr)
+        #outer.add_widget(lbl1)
+        outer.add_widget(self.lbl_sec)
+        outer.add_widget(line)
+        outer.add_widget(self.btn)
+ 
+        self.add_widget(outer)
 
-        self.result_layout = BoxLayout(size_hint = (0.8, 0.1))
-        self.result_layout.add_widget(self.lbl_result)
-        self.result_layout.add_widget(self.input_result)
-
-        self.main_layout = BoxLayout(orientation = "vertical", spacing = 8, padding = 8)
-        self.main_layout.add_widget(self.instructions)
-        self.main_layout.add_widget(self.lbl_seconds)     # додаємо віджет-секундомір у вертикальний лейаут (під інструкцією)
-        self.main_layout.add_widget(self.result_layout)
-        self.main_layout.add_widget(self.button)
-
-        self.add_widget(self.main_layout)
-
-    # Метод, який спрацьовує коли секундомір завершує роботу 
-    def seconds_finish(self, *args):
-        self.button.set_disabled(False)
-        self.input_result.set_disabled(False)
+    #метод, який спрацьовує коли таймер завершив працювати
+    def sec_finished(self, *args):
         self.next_screen = True
+        self.in_result.set_disabled(False)
+        self.btn.set_disabled(False)
+        self.btn.text = 'Продовжити'
 
-    # метод, що спрацьовує при натисканні на кнопку "Продовжити"
+    #метод, яка спрацьовуватиме при натисканні на кнопку "Продовжити" на другому екрані
     def next(self):
-        # якщо нам ще не можна на наступний екран 
         if not self.next_screen:
-            self.button.set_disabled(True) 
-            self.lbl_seconds.restart(15)
-        # якщо нам вже можна на наступний екран 
+            self.btn.set_disabled(True)
+            self.lbl_sec.start()
         else:
+            #в глобальну змінну p1 записуємо результат вимірювання пульсу, який користувач записав в наш TextInput
             global p1
-            p1 = check_int(self.input_result.text)
-            if p1 == False:
-                self.input_result.text = "Введіть ціле число"
-            elif p1 <= 0 or p1 >= 50:
-                self.input_result.text = "Виміряйте пульс ще раз"
-                self.next_screen = False
-                self.input_result.set_disabled(True)
+            p1 = check_int(self.in_result.text)
+            if p1 == False or p1 <= 0:
+                p1 = 0
+                self.in_result.text = str(p1)
             else:
-                self.manager.current = "sits"
-    
+                self.manager.current = 'sits'
+ 
 
-
-# Клас для створення третього екрану (з присіданнями)     
+#Клас для третього вікна (тут людині показується фраза про те, що їй треба зробити 30 присідань)
 class CheckSits(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        instructions = Label(text = txt_sits)
-        self.button = Button(text = 'Продовжити', size_hint = (0.3, 0.2), pos_hint = {'center_x': 0.5})
-        self.button.on_press = self.next
-        
-        self.sits = Sits(30)                                    # віджет для підрахунку присідань
-        self.runner = Runner(30, 1.5, size_hint = (0.4, 1))     # віджет з бігунком
-        #якщо властивість бігунка "finished" поміняє значення, то запускаємо метод runner_stop()
-        self.runner.bind(finished = self.runner_stop)
+        instr = Label(text=txt_sits, size_hint=(0.5, 1))
+
         self.next_screen = False
+        self.sits_counter = Sits(30)
+        #створюємо "бігунок"
+        self.run = Runner(total=30, steptime=1.5, size_hint=(0.4, 1))
+        #якщо властивість "бігунка", яка називається "finished" поміняє своє значення, то запускаємо метод run_finished()
+        self.run.bind(finished=self.run_finished)
 
-        horizontal_layout = BoxLayout()
-        horizontal_layout.add_widget(instructions)
-        horizontal_layout.add_widget(self.sits)
-        horizontal_layout.add_widget(self.runner)
+        line1 = BoxLayout(orientation='vertical', size_hint=(0.3, 1))
+        line1.add_widget(self.sits_counter)
 
-        main_line = BoxLayout(orientation = 'vertical', padding = 8, spacing = 8)
-        main_line.add_widget(horizontal_layout)
-        main_line.add_widget(self.button)
-        self.add_widget(main_line)
+        line = BoxLayout()
+        line.add_widget(instr)
+        line.add_widget(line1)
+        line.add_widget(self.run)
 
-    # метод, який спрацьовує, коли бігунок завершив свою роботу
-    def runner_stop(self, *args):
-        self.button.set_disabled(False)
+        self.btn = Button(text='Почати', size_hint=(0.3, 0.2), pos_hint={'center_x': 0.5})
+        self.btn.background_color = btn_color
+        self.btn.on_press = self.next
+
+        outer = BoxLayout(orientation='vertical', padding=8, spacing=8)
+        outer.add_widget(line)
+        outer.add_widget(self.btn)
+
+        self.add_widget(outer)
+
+    #метод, який спрацьовує, коли "бігунок" зробив 30 рухів верх\вниз
+    def run_finished(self, instance, value):
+        #розблоковуємо кнопку
+        self.btn.set_disabled(False)
+        self.btn.text = 'Продовжити'
         self.next_screen = True
 
-    # метод, що спрацьовує при натисканні на кнопку "Продовжити"
+    #метод, який спрацьовуватиме при натисканні на кнопку "Продовжити" на третьому екрані
     def next(self):
         if not self.next_screen:
-            self.button.set_disabled(True)
-            self.runner.start()
-            self.runner.bind(value = self.sits.next)
-
+            self.btn.set_disabled(True)
+            self.run.start()
+            self.run.bind(value=self.sits_counter.next)
         else:
             self.manager.current = 'pulse2'
-    
-  
 
-# Клас для створення четвертого екрану (з останніми двома вимірюваннями пульсу)   
+
+#Клас для четвертого вікна (тут людині треба вписати свій пульс одразу після присідань та після 30-секундної перерви)
 class PulseScr2(Screen):
     def __init__(self, **kwargs):
+        self.next_screen = False
+
+        self.stage = 0
         super().__init__(**kwargs)
-        instructions = Label(text = txt_test3)
-        lbl_result1 = Label(text = 'Результат:')
-        self.enter_result1 = TextInput(text = '0', multiline = False)
-        lbl_result2 = Label(text = 'Результат після відпочинку:')
-        self.enter_result2 = TextInput(text = '0', multiline = False)
-        self.button = Button(text = 'Завершити', size_hint = (0.3, 0.2), pos_hint = {'center_x': 0.5})
-        self.button.on_press = self.next
+ 
+        instr = Label(text=txt_test3)
+ 
+        line1 = BoxLayout(size_hint=(0.8, None), height='30sp')
+        self.lbl_sec = Seconds(15)
+        self.lbl_sec.bind(done=self.sec_finished)
+        self.lbl1 = Label(text='Рахуйте пульс')
 
-        self.lbl_seconds = Seconds(15)  # створюємо віджет-секундомір 
-        self.lbl_seconds.bind(done = self.seconds_finish)  # при завершенні роботи секундоміра запускаємо метод seconds_finish 
-        self.next_screen = False        # властивість, яка "пропускатиме" нас на наступний екран 
-        self.stage = 1                          # властивість, яка визначає на якому етапі роботи секундоміра знаходиться користувач
-        self.enter_result1.set_disabled(True)   # блокуємо поле для введення першого результату  
-        self.enter_result2.set_disabled(True)   # блокуємо поле для введення другого результату  
-
-        line1 = BoxLayout(size_hint = (0.8, 0.1))
+        lbl_result1 = Label(text='Результат:', halign='right')
+        self.in_result1 = TextInput(text='0', multiline=False)
+ 
         line1.add_widget(lbl_result1)
-        line1.add_widget(self.enter_result1)
+        line1.add_widget(self.in_result1)
+ 
+        line2 = BoxLayout(size_hint=(0.8, None), height='30sp')
+        lbl_result2 = Label(text='Результат після відпочинку:', halign='right')
+        self.in_result2 = TextInput(text='0', multiline=False)
 
-        line2 = BoxLayout(size_hint = (0.8, 0.1))
+        self.in_result1.set_disabled(True)
+        self.in_result2.set_disabled(True)
+ 
         line2.add_widget(lbl_result2)
-        line2.add_widget(self.enter_result2)
+        line2.add_widget(self.in_result2)
+ 
+        self.btn = Button(text='Почати', size_hint=(0.3, 0.5), pos_hint={'center_x': 0.5})
+        self.btn.background_color = btn_color
+        self.btn.on_press = self.next
+ 
+        outer = BoxLayout(orientation='vertical', padding=8, spacing=8)
+        outer.add_widget(instr)
+        outer.add_widget(self.lbl1)
+        outer.add_widget(self.lbl_sec)
+        outer.add_widget(line1)
+        outer.add_widget(line2)
+        outer.add_widget(self.btn)
+ 
+        self.add_widget(outer)
 
-        main_line = BoxLayout(orientation = 'vertical', padding = 8, spacing = 8)
-        main_line.add_widget(instructions)
-        main_line.add_widget(self.lbl_seconds)  
-        main_line.add_widget(line1)
-        main_line.add_widget(line2)
-        main_line.add_widget(self.button)
-        self.add_widget(main_line)
-
-    # Метод, який спрацьовує коли секундомір завершує роботу
-    def seconds_finish(self, *args):
-        if self.lbl_seconds.done:
-            if self.stage == 1:
-                self.enter_result1.set_disabled(False)
-                self.lbl_seconds.restart(30)
-                self.stage = 2
-            elif self.stage == 2:
-                self.lbl_seconds.restart(15)
-                self.stage = 3
-            elif self.stage == 3:
-                self.enter_result2.set_disabled(False)
-                self.button.set_disabled(False)
-                self.next_screen = True
-
-
-    # метод, що спрацьовує при натисканні на кнопку "Завершити"
+    #метод, який спрацьовує коли таймер завершив працювати
+    def sec_finished(self, *args):
+        if self.stage == 0:
+            # закінчили перший підрахунок, відпочиваємо
+            self.stage = 1
+            self.lbl1.text = 'Відпочивайте'
+            self.lbl_sec.restart(30)
+            self.in_result1.set_disabled(False)
+        elif self.stage == 1:
+            # закінчили відпочинок
+            self.stage = 2
+            self.lbl1.text='Рахуйте пульс'
+            self.lbl_sec.restart(15)
+        elif self.stage == 2:
+            self.in_result2.set_disabled(False)
+            self.btn.set_disabled(False)
+            self.btn.text = 'Завершити'
+            self.next_screen = True
+    
+    #метод, який спрацьовуватиме при натисканні на кнопку "Продовжити" на четвертому екрані
     def next(self):
         if not self.next_screen:
-            self.button.set_disabled(True)
-            self.lbl_seconds.start()
+            self.btn.set_disabled(True)
+            self.lbl_sec.start()
         else:
             global p2, p3
-            p2 = check_int(self.enter_result1.text)
-            p3 = check_int(self.enter_result2.text)
-
+            p2 = check_int(self.in_result1.text)
+            p3 = check_int(self.in_result2.text)
             if p2 == False:
-                self.enter_result1.text = "Введіть ціле число"
-            elif p2 <= 0 or p2 >= 50:
-                self.enter_result1.text = "Виміряйте пульс ще раз"
+                p2 = 0
+                self.in_result1.text = str(p2)
             elif p3 == False:
-                self.enter_result2.text = "Введіть ціле число"
-            elif p3 <= 0 or p3 >= 50:
-                self.enter_result2.text = "Виміряйте пульс ще раз"
+                p3 = 0
+                self.in_result2.text = str(p3)
             else:
+                # переходимо на наступний екран
                 self.manager.current = 'result'
-        
+ 
 
-
-# Клас для створення п'ятого екрану (з результатом)   
+#Клас для п'ятого вікна (тут буде показаний результат)
 class Result(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.instructions = Label(text = '')
-
-        self.main_layout = BoxLayout(orientation='vertical', padding=8, spacing=8)
-        self.main_layout.add_widget(self.instructions)
-
-        self.add_widget(self.main_layout)
+ 
+        self.outer = BoxLayout(orientation='vertical', padding=8, spacing=8)
+        self.instr = Label(text = '')
+        self.outer.add_widget(self.instr)
+ 
+        self.add_widget(self.outer)
         self.on_enter = self.before
+  
 
     def before(self):
         global name
-        self.instructions.text = name + '\n' + test(p1, p2, p3, age)
+        self.instr.text = name + '\n' + test(p1, p2, p3, age)
+ 
 
-
-
-# Клас для створення додатку
+#Клас, який визначає наш мобільний додаток
 class HeartCheck(App):
     def build(self):
         sm = ScreenManager()
-        sm.add_widget(InstrScr(name = "instructions"))
-        sm.add_widget(PulseScr(name = "pulse"))
-        sm.add_widget(CheckSits(name = "sits"))
-        sm.add_widget(PulseScr2(name = "pulse2"))
-        sm.add_widget(Result(name = "result"))
+        sm.add_widget(InstrScr(name='instr'))
+        sm.add_widget(PulseScr(name='pulse1'))
+        sm.add_widget(CheckSits(name='sits'))
+        sm.add_widget(PulseScr2(name='pulse2'))
+        sm.add_widget(Result(name='result'))
         return sm
-
-
+ 
 app = HeartCheck()
 app.run()
